@@ -1,5 +1,6 @@
 import dropbox
 import typing
+import os
 
 from scrapy.exceptions import NotConfigured
 from scrapy.extensions.feedexport import BlockingFeedStorage
@@ -22,7 +23,22 @@ class DropboxFeedStorage(BlockingFeedStorage):
         try:
             dbx = dropbox.Dropbox(self.api_token)
             path = self.uri.replace('dbox:/', '')
-            res = dbx.files_upload(file.read(), path, mute=True)
+            res = None
+            CHUNK_SIZE = 4 * 1024 * 1024
+            file_size = os.stat(file.name).st_size
+            if file_size <= CHUNK_SIZE:
+                res = dbx.files_upload(file.read(), path, mute=True, mode=WriteMode('overwrite'))
+            else:
+                upload_session_start_result = dbx.files_upload_session_start(file.read(CHUNK_SIZE))
+                cursor = dropbox.files.UploadSessionCursor(
+                    session_id=upload_session_start_result.session_id, offset=file.tell())
+                commit = dropbox.files.CommitInfo(path=path)
+                while file.tell() < file_size:
+                    cursor.offset = file.tell()
+                    if ((file_size - file.tell()) <= CHUNK_SIZE):
+                        res = dbx.files_upload_session_finish(file.read(CHUNK_SIZE), cursor, commit)
+                    else:
+                        dbx.files_upload_session_append_v2(file.read(CHUNK_SIZE), cursor)
             print(f'Dropbox upload response: {res}')
         except dropbox.exceptions.ApiError as err:
             print('Dropbox API error', err)
