@@ -4,6 +4,7 @@ import os
 
 from scrapy.exceptions import NotConfigured
 from scrapy.extensions.feedexport import BlockingFeedStorage
+from dropbox.files import WriteMode
 
 
 class DropboxFeedStorage(BlockingFeedStorage):
