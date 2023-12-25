@@ -96,8 +96,8 @@ def test_dropbox_store_large_file(
 @pytest.mark.parametrize(
     "uri, expected_result",
     [
-        ("dropbox://folder/file.txt", "/folder/file.txt"),
-        ("invalid_scheme://folder/file.txt", None),
+        ("dropbox://folder/file.json", "/folder/file.json"),
+        ("invalid_scheme://folder/file.json", None),
         ("dropbox://folder/file_without_extension", None),
         ("", None),
     ],
