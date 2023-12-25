@@ -34,7 +34,7 @@ def test_dropbox_feed_storage_init(mock_dropbox):
 def test_dropbox_store_small_file(
     mock_dropbox, mock_upload_large_file, mock_upload_small_file, mock_get_file_size
 ):
-    """This tests the large file upload."""
+    """This tests the small file upload (i.e: file_size < CHUNK_SIZE)"""
 
     # create crawler
     uri = "dropbox://myfolder/export.csv"
@@ -67,7 +67,7 @@ def test_dropbox_store_small_file(
 def test_dropbox_store_large_file(
     mock_dropbox, mock_upload_large_file, mock_upload_small_file, mock_get_file_size
 ):
-    """This tests the small file upload"""
+    """This tests the large file upload (i.e: file_size > CHUNK_SIZE)"""
 
     # create crawler
     uri = "dropbox://myfolder/export.csv"
