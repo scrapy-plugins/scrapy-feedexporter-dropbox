@@ -19,10 +19,9 @@ class DropboxFeedStorage(BlockingFeedStorage):
             feed_options = {}
 
         if feed_options and feed_options.get("overwrite", True) is False:
-            logger.warning(
-                "This feed exporter does not support append operation. Files will"
-                " always be overwritten. To suppress this warning, remove the overwrite"
-                " option from your FEEDS setting"
+            raise NotConfigured(
+                "This feed exporter does not support append operation, so `overwrite` cannot be set to `False`."
+                "Default is `True`, so files will always be overwritten"
             )
 
         dropbox_path = parse_uri(uri)
