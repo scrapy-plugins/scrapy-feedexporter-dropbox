@@ -23,11 +23,12 @@ def _init_from_crawler(storage, crawler, feed_options):
         )
 
     dropbox_path = parse_uri(storage.uri)
+    scheme = storage.uri.split(":/", maxsplit=1)[0]
     storage.dropbox_path = dropbox_path
     if not dropbox_path:
         raise NotConfigured(
-            "Please enter correct path with the format: "
-            "'dropbox://folder_name/file_name'"
+            f"Please enter correct path with the format: "
+            f"'{scheme}://folder_name/file_name'"
         )
     storage.api_token = crawler.settings["DROPBOX_API_TOKEN"]
 

@@ -97,7 +97,7 @@ def test_dropbox_store_large_file(
     "uri, expected_result",
     [
         ("dropbox://folder/file.json", "/folder/file.json"),
-        ("invalid_scheme://folder/file.json", None),
+        ("dbox://folder/file.json", "/folder/file.json"),
         ("dropbox://folder/file_without_extension", "/folder/file_without_extension"),
         ("", None),
         ("dropbox://", None),
