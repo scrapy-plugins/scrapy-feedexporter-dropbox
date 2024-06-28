@@ -10,7 +10,6 @@ from scrapy.extensions.feedexport import BlockingFeedStorage
 from .utils import parse_uri
 
 logger = logging.getLogger(__name__)
-CHUNK_SIZE = 4 * 1024 * 1024
 
 
 def _init_from_crawler(storage, crawler, feed_options):
@@ -28,14 +27,22 @@ def _init_from_crawler(storage, crawler, feed_options):
     if not dropbox_path:
         raise NotConfigured(
             "Please enter correct path with the format: "
-            "'dropbox://folder_name/file_name.extension'"
+            "'dropbox://folder_name/file_name'"
         )
     storage.api_token = crawler.settings["DROPBOX_API_TOKEN"]
 
     storage.dropbox_client = Dropbox(storage.api_token)
 
+    # validate credentials
+    try:
+        storage.dropbox_client.users_get_current_account()
+    except Exception as e:
+        logger.exception(f"Logging exception: {e}")
+        raise NotConfigured("Please provide valid credentials")
+
 
 class DropboxFeedStorage(BlockingFeedStorage):
+    CHUNK_SIZE = 4 * 1024 * 1024
     def __init__(self, uri, crawler=None, feed_options=None):
         self.uri = uri
         if crawler:
@@ -71,7 +78,7 @@ class DropboxFeedStorage(BlockingFeedStorage):
         res = None
         file_size = self.get_file_size(file)
         upload_session_start_result = self.dropbox_client.files_upload_session_start(
-            file.read(CHUNK_SIZE)
+            file.read(self.CHUNK_SIZE)
         )
         cursor = files.UploadSessionCursor(
             session_id=upload_session_start_result.session_id, offset=file.tell()
@@ -79,14 +86,14 @@ class DropboxFeedStorage(BlockingFeedStorage):
         commit = files.CommitInfo(path=self.dropbox_path, mode=WriteMode("overwrite"))
         while file.tell() < file_size:
             cursor.offset = file.tell()
-            if (file_size - file.tell()) <= CHUNK_SIZE:
+            if (file_size - file.tell()) <= self.CHUNK_SIZE:
                 res = self.dropbox_client.files_upload_session_finish(
-                    file.read(CHUNK_SIZE), cursor, commit
+                    file.read(self.CHUNK_SIZE), cursor, commit
                 )
 
             else:
                 self.dropbox_client.files_upload_session_append_v2(
-                    file.read(CHUNK_SIZE), cursor
+                    file.read(self.CHUNK_SIZE), cursor
                 )
         logger.info(f"Dropbox large file upload response: {res}")
 
@@ -97,7 +104,7 @@ class DropboxFeedStorage(BlockingFeedStorage):
         file.seek(0)
         try:
             file_size = self.get_file_size(file)
-            if file_size <= CHUNK_SIZE:
+            if file_size <= self.CHUNK_SIZE:
                 self.upload_small_file(file)
             else:
                 self.upload_large_file(file)

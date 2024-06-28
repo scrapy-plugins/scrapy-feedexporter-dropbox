@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from scrapy.utils.test import get_crawler
 
-from scrapy_dropbox import CHUNK_SIZE, DropboxFeedStorage
+from scrapy_dropbox import DropboxFeedStorage
 from scrapy_dropbox.utils import parse_uri
 
 
@@ -52,7 +52,7 @@ def test_dropbox_store_small_file(
 
     mock_upload_large_file.return_value = MagicMock()
     mock_upload_small_file.return_value = MagicMock()
-    mock_get_file_size.return_value = CHUNK_SIZE
+    mock_get_file_size.return_value = storage.CHUNK_SIZE
 
     storage._store_in_thread(file)
     file.seek.assert_called_once_with(0)
@@ -85,7 +85,7 @@ def test_dropbox_store_large_file(
 
     mock_upload_large_file.return_value = MagicMock()
     mock_upload_small_file.return_value = MagicMock()
-    mock_get_file_size.return_value = 4 * CHUNK_SIZE
+    mock_get_file_size.return_value = 4 * storage.CHUNK_SIZE
 
     storage._store_in_thread(file)
     file.seek.assert_called_once_with(0)
