@@ -1,15 +1,13 @@
-import os
+""" misc util methods"""
 
 
 def parse_uri(uri):
     """Takes in uri and returns the dropbox path"""
-    if not uri.startswith("dropbox://"):
-        return None
-
-    dropbox_path = uri.replace("dropbox:/", "")
-    _, file_extension = os.path.splitext(dropbox_path)
-
-    if not file_extension:
-        return None
-
-    return dropbox_path
+    dropbox_path_parts = uri.split("dropbox:/", maxsplit=1)
+    if (
+        len(dropbox_path_parts) == 2
+        and dropbox_path_parts[1]
+        and dropbox_path_parts[1] != "/"
+    ):
+        return dropbox_path_parts[1]
+    return None

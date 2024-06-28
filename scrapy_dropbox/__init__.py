@@ -13,42 +13,50 @@ logger = logging.getLogger(__name__)
 CHUNK_SIZE = 4 * 1024 * 1024
 
 
+def _init_from_crawler(storage, crawler, feed_options):
+    if feed_options is None:
+        feed_options = {}
+
+    if feed_options and feed_options.get("overwrite", True) is False:
+        raise NotConfigured(
+            "This feed exporter does not support append operations, so `overwrite` cannot be set to `False`."
+            "It must be `True` (default). Files will always be overwritten."
+        )
+
+    dropbox_path = parse_uri(storage.uri)
+    storage.dropbox_path = dropbox_path
+    if not dropbox_path:
+        raise NotConfigured(
+            "Please enter correct path with the format: "
+            "'dropbox://folder_name/file_name.extension'"
+        )
+    storage.api_token = crawler.settings["DROPBOX_API_TOKEN"]
+
+    storage.dropbox_client = Dropbox(storage.api_token)
+
+
 class DropboxFeedStorage(BlockingFeedStorage):
-    def __init__(self, uri, api_token, *, feed_options):
-        if feed_options is None:
-            feed_options = {}
-
-        if feed_options and feed_options.get("overwrite", True) is False:
-            raise NotConfigured(
-                "This feed exporter does not support append operation, so `overwrite` cannot be set to `False`."
-                "Default is `True`, so files will always be overwritten"
-            )
-
-        dropbox_path = parse_uri(uri)
-        if not dropbox_path:
-            raise NotConfigured(
-                "Please enter correct path with the format: "
-                "'dropbox://folder_name/file_name.extension'"
-            )
-        self.dropbox_path = dropbox_path
-        self.api_token = api_token
-
-        self.dropbox_client = Dropbox(self.api_token)
-
-        # validate credentials
-        try:
-            self.dropbox_client.users_get_current_account()
-        except Exception as e:
-            logger.exception(e)
-            raise NotConfigured("Please provide valid credentials")
+    def __init__(self, uri, crawler=None, feed_options=None):
+        self.uri = uri
+        if crawler:
+            _init_from_crawler(self, crawler, feed_options)
 
     @classmethod
     def from_crawler(cls, crawler, uri, *, feed_options=None):
-        return cls(
-            uri,
-            crawler.settings["DROPBOX_API_TOKEN"],
-            feed_options=feed_options,
-        )
+        try:
+            return cls(uri, crawler, feed_options)
+        except TypeError:
+            logger.warning(
+                (
+                    "Defining subclasses of DropboxFeedStorage that do not "
+                    "accept the crawler and feed_options parameters in their "
+                    "__init__ method is deprecated, and will stop working in "
+                    "a future version."
+                )
+            )
+            storage = cls(uri)
+            _init_from_crawler(storage, crawler, feed_options)
+            return storage
 
     def get_file_size(self, file):
         return os.stat(file.name).st_size
@@ -57,7 +65,7 @@ class DropboxFeedStorage(BlockingFeedStorage):
         res = self.dropbox_client.files_upload(
             file.read(), self.dropbox_path, mute=True, mode=WriteMode("overwrite")
         )
-        print(f"Dropbox small file upload response: {res}")
+        logger.info(f"Dropbox small file upload response: {res}")
 
     def upload_large_file(self, file):
         res = None
