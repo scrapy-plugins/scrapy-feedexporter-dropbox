@@ -2,11 +2,11 @@
 [Scrapy feed export storage backend](https://doc.scrapy.org/en/latest/topics/feed-exports.html#storage-backends) for Dropbox.
 
 ## Requirements
--  Python 3.8+
+-  Python 3.10+
 
 ## Installation
 ```bash
-pip install git+https://github.com/scrapy-plugins/scrapy-feedexporter-dropbox
+pip install scrapy-feedexporter-dropbox
 ```
 
 ## Usage
