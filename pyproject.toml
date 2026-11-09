@@ -45,7 +45,6 @@ include = [
     "/scrapy_dropbox",
     "/tests",
     "/CHANGES.rst",
-    "/README.md",
     "/tox.ini",
 ]
 
